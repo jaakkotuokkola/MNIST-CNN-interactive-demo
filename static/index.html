@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>MNIST CNN Interactive Demo</title>
+    <style>
+      body { font-family: Arial, sans-serif; display:flex; gap:20px; padding:20px }
+      #canvas { border:1px solid #333; touch-action: none }
+      .controls { display:flex; flex-direction:column; gap:8px }
+    </style>
+  </head>
+  <body>
+    <div>
+      <canvas id="canvas" width="280" height="280"></canvas>
+      <div>
+        <button id="clear">Clear</button>
+        <button id="predict">Predict</button>
+      </div>
+    </div>
+    <div class="controls">
+      <div><strong>Prediction:</strong> <span id="result">—</span></div>
+      <div id="probs"></div>
+      <div style="font-size:12px;color:#666;max-width:300px">Draw a digit (0–9) on the canvas, then click Predict.</div>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
