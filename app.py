@@ -39,17 +39,67 @@ def predict():
     except Exception as e:
         return jsonify({"error": f"Invalid image data: {e}"}), 400
     
-    # Preprocess the image
+    # Preprocess the image, crop to content, resize while preserving aspect,
+    # place into 28x28 canvas and center via center-of-mass shift.
+    arr = np.array(img).astype("float32") / 255.0
+
+    # If background is white (mean > 0.5), invert so digit is white on black
+    if arr.mean() > 0.5:
+        arr = 1.0 - arr
+    
+    # Have to ensure the digit is properly cropped and centered for prediction
+    thresh = 0.15
+    mask = arr > thresh
+    if mask.any():
+        rows = np.where(mask.any(axis=1))[0]
+        cols = np.where(mask.any(axis=0))[0]
+        r0, r1 = rows[0], rows[-1]
+        c0, c1 = cols[0], cols[-1]
+        pad = 4
+        r0 = max(0, r0 - pad)
+        r1 = min(arr.shape[0] - 1, r1 + pad)
+        c0 = max(0, c0 - pad)
+        c1 = min(arr.shape[1] - 1, c1 + pad)
+        cropped = arr[r0:r1+1, c0:c1+1]
+    else:
+        cropped = arr
+
+    # Choose resampling filter
     try:
         resample = Image.Resampling.LANCZOS
     except AttributeError:
         resample = getattr(Image, 'LANCZOS', Image.BILINEAR)
-    img = img.resize((28, 28), resample)
-    arr = np.array(img).astype("float32") / 255.0
 
-    if arr.mean() > 0.5:
-        arr = 1.0 - arr
+    # Resize while keeping aspect ratio so the digit fits into a 20x20 box
+    cropped_img = Image.fromarray(np.uint8(cropped * 255), mode='L')
+    w, h = cropped_img.size
+    if w > h:
+        new_w = 20
+        new_h = max(1, int(round((20.0 * h) / w)))
+    else:
+        new_h = 20
+        new_w = max(1, int(round((20.0 * w) / h)))
+    resized = cropped_img.resize((new_w, new_h), resample)
 
+    # Paste the resized digit into a 28x28 canvas centered
+    canvas_img = Image.new('L', (28, 28), color=0)
+    offset = ((28 - new_w) // 2, (28 - new_h) // 2)
+    canvas_img.paste(resized, offset)
+
+    arr28 = np.array(canvas_img).astype('float32') / 255.0
+
+    # Center the digit using center of mass shifting
+    total = arr28.sum()
+    if total > 0:
+        coords = np.indices(arr28.shape)
+        cy = (coords[0] * arr28).sum() / total
+        cx = (coords[1] * arr28).sum() / total
+        shift_y = int(round((arr28.shape[0] - 1) / 2.0 - cy))
+        shift_x = int(round((arr28.shape[1] - 1) / 2.0 - cx))
+        arr28 = np.roll(arr28, shift_y, axis=0)
+        arr28 = np.roll(arr28, shift_x, axis=1)
+
+    arr = arr28
     arr = arr[..., None]
     arr = np.expand_dims(arr, 0)
 
