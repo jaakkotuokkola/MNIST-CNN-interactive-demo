@@ -1,4 +1,4 @@
-The file train_mnist.py trains a convolutional neural network on the MNIST handwritten digit dataset. The app allows you to draw a digit and tasks the neural network with recognizing it. This is a classic machine learning problem, with roots dating back to the 1980s and 1990s. It has long served as a benchmark for evaluating image classification algorithms and neural networks.
+The file train_mnist.py trains a convolutional neural network on the MNIST handwritten digit dataset. The app allows you to draw a digit and has the neural network attempt to recognize it. This is a classic machine learning task for convolutional neural networks and has long served as a benchmark for evaluating image classification algorithms and neural network architectures.
 
 1. Create a virtual environment and install dependencies:
 
